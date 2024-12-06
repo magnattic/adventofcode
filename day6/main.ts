@@ -92,22 +92,31 @@ const checkForLoop = (guard: GuardPosition, map: Map) => {
   return cell.visitedDirection.includes(guard.facing);
 };
 
-const moveGuard = (guard: GuardPosition, map: Map) => {
-  const nextCellPos = getNextCellPosition(guard);
-  const nextCell = map[nextCellPos.y]?.[nextCellPos.x];
-  // console.log({ guard, nextCellPos });
-  if (checkForLoop(guard, map)) {
-    throw 'loop';
+const moveGuard = (guard: GuardPosition, map: Map): Map => {
+  let currentGuard = { ...guard };
+  let currentMap = map;
+
+  while (true) {
+    const nextCellPos = getNextCellPosition(currentGuard);
+    const nextCell = currentMap[nextCellPos.y]?.[nextCellPos.x];
+
+    if (checkForLoop(currentGuard, currentMap)) {
+      throw 'loop';
+    }
+
+    currentMap = markVisited(currentGuard, currentMap);
+
+    if (nextCell === undefined) {
+      return currentMap;
+    }
+
+    if (nextCell.content === 'obstacle') {
+      currentGuard = turnGuard(currentGuard);
+      continue;
+    }
+
+    currentGuard = { ...currentGuard, ...nextCellPos };
   }
-  const updatedMap = markVisited(guard, map);
-  if (nextCell === undefined) {
-    return updatedMap;
-  }
-  if (nextCell.content === 'obstacle') {
-    return moveGuard(turnGuard(guard), updatedMap);
-  }
-  const movedGuard = { ...guard, ...nextCellPos };
-  return moveGuard(movedGuard, updatedMap);
 };
 
 const getCellContent = (cell: string) => {
